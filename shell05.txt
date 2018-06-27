@@ -1,0 +1,343 @@
+正则表达式：表达方式   例如： 语言  手语   眼神   神经
+ 
+表达方式特点：人于机器之间的语言
+交流方式：使用的是一些人规定好的符号  例如 ^  $
+grep ：取正则
+#################  基本正则  #################
+基本正则：处理单位是单个字符 （兼容性强，支持的软件多，麻烦）
+
+     ^  :开始
+     $ ：结尾
+     [ ] : 集合，之一
+  [ ^ ] ：对集合取反 （取的是括号里面的内容）
+     . :代表任意单个字符 (.. 两个符号  ... 三个符号)
+    * ：匹配前一个字符出现了任意次。  "ab*" :*号只跟b有关系，与a没有关系，主要是带a的都必须出现。
+    .* :匹配任意所有。
+  \{n,m\} : 匹配前一个字符出现了n到m次。 ，如果m不写上不   \{n,m\}
+  \{n\}  ：匹配前一个字符出现了n次。
+  
+   \
+
+练习题：
+  1.过滤下载文件中包含 the 关键字
+
+   [root@svr7 ~]# grep -n 'the' 1.txt       -n : 显示行号
+    [root@svr7 ~]# grep  'the' 1.txt      
+  
+ 2.过滤下载文件中不包含 the 关键字                    -v：不包含的
+
+    [root@svr7 ~]# grep -vn 'the' 1.txt
+        
+
+  3.过滤下载文件中不论大小写 the 关键字               -in：包含大小写
+
+ [root@svr7 ~]# grep -in 'the' 1.txt
+
+
+4.过滤 test 或 taste 这两个单字
+
+[root@svr7 ~]# grep "t[ae]ste*" 1.txt
+[root@svr7 ~]# grep "t[ae]ste\{0," 1.txt
+
+5.过滤有 oo 的字节
+   [root@svr7 ~]# grep "oo" 1.txt
+
+6.过滤丌想要 oo 前面有 g 的
+   [root@svr7 ~]# grep "[^g]oo" 1.txt
+
+7.过滤 oo 前面丌想有小写字节
+[root@svr7 ~]# grep "[^a-z]oo" 1.txt
+
+8.过滤有数字的那一行
+[root@svr7 ~]# grep "[0-9]" 1.txt
+
+
+
+
+######################  扩展正则 ###################
+
+简化基本正则：处理单位不一定是单个字符。（简单，兼容性差）
+grep ：不支持宽展正则。
+egrep : 支持宽展正则. 
+
+    \{n,m\}  ====> {n,m}
+
+(|) : 或者
+ () : 复制、保留
+  \n  : 粘贴
+添加新的符号 
+   * :把*号分成 + ? 号
+  +  ：至少出现一次。
+
+  ?   : 可有可无
+
+
+\b :代表单词边界。
+
+
+例题：ifconfig | grep "xx"
+
+ipv4地址，补红色。
+
+[root@svr7 ~]# ifconfig  | egrep "([0-9]{1,3}\.){3}[0-9]{1,3}"
+
+
+
+
+####################################################################################
+       sed 基本用法
+
+sed :流式（文本）编辑器
+优点：流处理、非交互 、可以写脚本、行处理。
+ 
+
+
+clone-vm7  (脚本)
+ 
+read -p "vm number:" num
+1. cp ing文件  new$num.img
+2.cp xml  new$num.xml
+3.虚拟机<name,UUID,MAC,disk>
+  sed
+virsh  define  new.xml
+
+
+处理是
+   sed 命令语法格式：
+  
+                         sed  [选项]  '条件指令'    文件
+
+                         sed    '3d'  （删除第3行）   文件
+
+                         ded -n  '/正则/p'          文件
+                     
+ 条件指令：     p （print） : 打印
+             d           :删除行
+             s           : 字符串替换(修改)。
+             a           : 行的后面写入（添加内容）
+             i           : 行的前面写入 （添加内容）
+             c           :行替换
+
+
+             （            了解               ）
+             r            :读取文件
+             w            :保存 w a.txt 有名字是另存为。
+
+  -n :屏蔽默认的输出的内容。
+  -i : 直接修改文件内容。   （可以一次性删除多行）        
+  sed：修改文件，默认都不改源文件，默认把修改后的结果输出到屏幕上。
+  -r :启用扩展的正则表达式,若与其他选项一起使用，应作为个选项
+     sed:默认不支持扩展正则。
+   -{} :可组合多个命令，以分号分隔。
+  
+
+   p;n :输出奇数行
+   n;p :输出偶数行
+    '$='  :输出文件的总行数。
+     & : 
+   \(\) : 复制、保留
+  \n  : 粘贴
+sed 替换指令中的替换符号(/),可以改为任意其他字符
+
+把/etc/passwd 里面的/bin/bash ------>/sbin/NB
+[root@svr7 ~]# sed 's/\/bin\/bash/\/sbin\/NB/'   /etc/passwd
+                              #需要用\来反义一下。
+可以实现但是不合格。
+[root@svr7 ~]# sed 's#/bin/bash#/sbin/NB#' /etc/passwd
+  
+    163的面试题：  sed 's988\9\98\99\9\978\99'  文件
+                           把889989 转换为了 99789
+  思路是：s后是替换符，然后找没有被屏蔽的三个点 
+
+
+[root@svr7 ~]# sed -n '$=' /etc/passwd
+152
+[root@svr7 ~]# cat /etc/passwd | wc -l 
+152
+
+[root@svr7 ~]# sed '1p' /etc/hosts  #把第1行复制了一行
+ 如果没有 p sed 会默认把整个文件复制一遍。
+
+[root@svr7 ~]# sed  -n  '1p' /etc/hosts  #加-n '1p' 默认输出第一行。
+           
+[root@svr7 ~]# sed -n '/root/p' /etc/passwd  #把文件里所有包含root的内容输出
+
+[root@svr7 ~]# sed -n '/[0-9]/p' /etc/passwd  #把文件里所有包含数字的内容输出
+
+[root@svr7 ~]# sed -n '3,5p' /etc/passwd   #显示3到5行的内容。
+
+
+root@svr7 ~]# vim d.txt
+[root@svr7 ~]# sed -i '3b' /etc/passwd
+[root@svr7 ~]# sed -n '/root/p'  /etc/passwd
+
+[root@svr7 ~]# sed -n '3,5p' /etc/passwd
+
+[root@svr7 ~]# sed '3,5d' d.txt
+
+[root@svr7 ~]# sed '/bash$/d' /etc/passwd   
+
+
+
+[root@svr7 ~]# sed 's/2000/xxxx/' aa.txt   #仅替换每行第一个
+[root@svr7 ~]# sed 's/2000/xxxx/g' aa.txt  #替换全部所有的内容
+[root@svr7 ~]# sed 's/2000/xxxx/2' aa.txt   #仅替换每一行的第2个
+[root@svr7 ~]# sed 's/2000//g' aa.txt       #  把2000替换为空 （删除所有的2000）
+
+
+vim aa.txt
+:%s/2000/xxxx/
+:%s/2000/xxxx/g
+
+
+
+
+  \(\) : 复制、保留
+   ()  :  复制、保留
+  \n  : 粘贴
+把两个内容的第一个字母与最后一个字母换一下
+# cat  c.txt
+hello the  world
+ni  hao  ma
+# sed -r 's#^(.)(.*)(.)$#\3\2\1#'  c.txt
+dello the  worlh
+ai  hao  mn
+
+把两个内容的第2个字母与到数第2个字母对换一下。
+
+[root@svr7 ~]# sed -r 's#^(.)(.)(.*)(.)(.)$#\1\4\3\2\5#'  c.txt
+hlllo the  wored
+nm  hao  ia
+
+
+
+修改IP地址为 172.16.0.100
+[root@svr7 ~]# cat /etc/sysconfig/network-scripts/ifcfg-eth0
+
+IPADDR=192.168.4.7
+
+
+方法一：
+       [root@svr7 ~]# sed -r 's/192.168.4\.(.*)/172.16.0.\1/'  /etc/sysconfig/network-scripts/ifcfg-eth0
+
+
+方法二：[root@svr7 ~]# sed -r 's/=.*\.(.*)/172.16.0.\1/'  /etc/sysconfig/network-scripts/ifcfg-eth0
+
+
+方法三：[root@svr7 ~]# sed  -r 's/([0-9]{1,3}.){3}([0-9]{1,3})/172.16.0.\2/'  /etc/sysconfig/network-scripts/ifcfg-eth0
+
+
+
+ a           : 行的后面写入（添加内容）
+ i           : 行的前面写入 （添加内容）
+  配置文件 有一些是[不关心位置]   有一些是[关心位置]
+[root@svr7 ~]# sed '2a xxx' c.txt  
+[root@svr7 ~]# sed '2i yyy' c.txt
+[root@svr7 ~]# sed '4,7 ixx' c.txt
+
+
+
+
+
+c           :行替换
+
+sed '/root/c xxl'  文件   #把有root的一行，换成xxl
+
+
+             r            :读取i文件
+             w            :保存 w a.txt 有名字是另存为。
+
+
+[root@svr7 ~]# sed '2r /etc/hosts'  c.txt  
+#把/etc/hosts 里的两行内容粘贴到 c.txt文件的第二行之后。
+
+[root@svr7 ~]# sed 'w /etc/hosts'  c.txt
+
+[root@svr7 ~]# sed '2w /etc/hosts'  c.txt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
